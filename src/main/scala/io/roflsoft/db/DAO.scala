@@ -6,6 +6,7 @@ import doobie.util.transactor.Transactor
 import doobie.implicits._
 import doobie.util.fragment.Fragment
 import doobie.util.Read
+import enumeratum.EnumEntry
 import io.roflsoft.reflection.utils.{className, members}
 
 import scala.reflect.runtime.universe.TypeTag
@@ -19,11 +20,12 @@ abstract class DAO[M <: Product : TypeTag : Read](tableName: String) {
   def insert[F[M] : DAOTransactor : ErrorBracket](m: M): F[M] = {
     val fieldValues = m.productIterator.map {
       case s: String => s"'$s'"
+      case e: EnumEntry => s"'${e.entryName}'"
       case f => s"$f"
     }.mkString(",")
 
     val insert = fr"""INSERT INTO""" ++ Fragment.const(s""" "$tableName" """) ++ fr"""(""" ++ Fragment.const(members[M].mkString(",")) ++ fr""") VALUES (""" ++ Fragment.const(fieldValues) ++ fr""")"""
-
+    println(insert)
     complete(insert.update.withUniqueGeneratedKeys[M](members[M]: _*))
   }
 

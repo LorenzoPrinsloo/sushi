@@ -21,5 +21,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream"          % akkaVersion,
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-  "net.debasishg" %% "redisclient" % "3.10"
+  "net.debasishg" %% "redisclient" % "3.10",
+  "com.beachape" % "enumeratum_2.12" % "1.5.13",
+  "com.beachape" % "enumeratum-doobie_2.12" % "1.5.15",
+  "com.beachape" % "enumeratum-circe_2.12" % "1.5.15"
 )
