@@ -1,8 +1,11 @@
 package io.roflsoft
 
 import cats.effect.{Bracket, ContextShift, IO}
+import com.typesafe.scalalogging.Logger
 import doobie.{ConnectionIO, ExecutionContexts, Transactor}
 import doobie.implicits._
+import doobie.util.log
+import doobie.util.log.LogHandler
 import monix.eval.Task
 
 package object db {
@@ -17,6 +20,16 @@ package object db {
 
   def complete[A, F[M]](io: ConnectionIO[A])(implicit transactor: Transactor[F] { type A = Unit }, bracket: Bracket[F, Throwable] ): F[A] = {
     io.transact(transactor)
+  }
+
+  object logging {
+    val logger: Logger = Logger("DAO")
+
+    val logHandler = LogHandler {
+      case log.Success(sql, args, exec, processing) => logger.info(s"${Console.WHITE}Success: ${Console.GREEN}${sql} ${Console.WHITE}Arguments: ${Console.GREEN}${args.mkString(",")} ${Console.WHITE}Duration: ${Console.BLUE}exec ${exec.toSeconds}s processing ${processing.toSeconds}s${Console.RESET}")
+      case log.ProcessingFailure(sql, args, exec, processing, failure) => logger.error(s"${Console.RED}SQL Processing Failure: ${Console.WHITE}${sql} ${Console.RED}Arguments: ${Console.WHITE}${args.mkString(",")} ${Console.WHITE}Duration: ${Console.BLUE}exec ${exec.toSeconds}s processing ${processing.toSeconds}s${Console.RESET}", failure)
+      case log.ExecFailure(sql, args, exec, failure) => logger.error(s"${Console.RED}SQL Execution Failure: ${Console.WHITE}${sql} ${Console.RED}Arguments: ${Console.WHITE}${args.mkString(",")} ${Console.WHITE}Duration: ${Console.BLUE}exec ${exec.toSeconds}s${Console.RESET}", failure)
+    }
   }
 
 }
