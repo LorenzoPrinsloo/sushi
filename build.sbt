@@ -26,3 +26,16 @@ libraryDependencies ++= Seq(
   "com.beachape" % "enumeratum-doobie_2.12" % "1.5.15",
   "com.beachape" % "enumeratum-circe_2.12" % "1.5.15"
 )
+
+lazy val codegen =
+  (project in file("codegen"))
+  .settings(
+    name := "sushi-codegen",
+    organization := "io.roflsoft",
+    version := "0.1-SNAPSHOT",
+    sbtPlugin := true,
+    resolvers ++= Seq(
+      "zalando-maven" at "https://dl.bintray.com/zalando/maven"
+    ),
+    libraryDependencies += "de.zalando" %% "beard" % "0.2.0"
+  )
