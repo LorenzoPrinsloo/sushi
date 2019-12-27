@@ -6,7 +6,8 @@ import akka.http.scaladsl.server.Route
 import akka.stream.{ActorMaterializer, Materializer}
 import com.typesafe.scalalogging.Logger
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 trait SimpleWebServer extends WebServer {
@@ -29,5 +30,10 @@ trait SimpleWebServer extends WebServer {
         logger.error(s"${Console.RED}Server could not start!${Console.RESET}", e)
         system.terminate()
     }
+  }
+
+  def main(args: Array[String]): Unit = {
+    start(routes, interface)
+    Await.result(system.whenTerminated, Duration.Inf)
   }
 }

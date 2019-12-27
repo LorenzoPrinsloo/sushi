@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.Logger
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext}
 
-trait WebServer extends App {
+trait WebServer {
 
   implicit val system: ActorSystem
   implicit val mat: Materializer
@@ -19,10 +19,4 @@ trait WebServer extends App {
   val logger: Logger
 
   def start(routes: Route, interface: String, port: Int = web_port): Unit
-
-  override def main(args: Array[String]): Unit = {
-    super.main(args)
-    start(routes, interface)
-    Await.result(system.whenTerminated, Duration.Inf)
-  }
 }

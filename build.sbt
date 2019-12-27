@@ -1,19 +1,19 @@
 name := "sushi"
 organization := "io.roflsoft"
 version := "0.0.2"
-scalaVersion := "2.12.7"
-scalacOptions += "-Ypartial-unification"
+scalaVersion := "2.13.0"
 
-lazy val akkaHttpVersion = "10.1.9"
-lazy val akkaVersion     = "2.6.0-M5"
+lazy val akkaHttpVersion = "10.1.11"
+lazy val akkaVersion     = "2.5.26"
+lazy val circeVersion    = "0.12.0"
 
 libraryDependencies ++= Seq(
-  "org.typelevel" %% "cats-core" % "2.0.0-RC1",
-  "org.tpolecat" %% "doobie-core"      % "0.7.0",
-  "io.circe" %% "circe-core" % "0.12.0-M4",
-  "io.circe" %% "circe-generic"  % "0.12.0-M4",
-  "io.circe" %% "circe-parser"  % "0.12.0-M4",
-  "io.monix" %% "monix" % "3.0.0-RC4",
+  "org.typelevel" %% "cats-core" % "2.0.0",
+  "org.tpolecat" %% "doobie-core" % "0.8.7",
+  "io.circe" %% "circe-core" % circeVersion,
+  "io.circe" %% "circe-generic" % circeVersion,
+  "io.circe" %% "circe-parser" % circeVersion,
+  "io.monix" %% "monix" % "3.1.0",
   "joda-time" % "joda-time" % "2.10.3",
   "com.typesafe.akka" %% "akka-http"            % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
@@ -22,9 +22,9 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "net.debasishg" %% "redisclient" % "3.10",
-  "com.beachape" % "enumeratum_2.12" % "1.5.13",
-  "com.beachape" % "enumeratum-doobie_2.12" % "1.5.15",
-  "com.beachape" % "enumeratum-circe_2.12" % "1.5.15"
+  "com.beachape" % "enumeratum_2.13" % "1.5.14",
+  "com.beachape" % "enumeratum-doobie_2.13" % "1.5.16",
+  "com.beachape" % "enumeratum-circe_2.13" % "1.5.21"
 )
 
 lazy val codegen =
