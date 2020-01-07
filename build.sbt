@@ -24,7 +24,8 @@ libraryDependencies ++= Seq(
   "net.debasishg" %% "redisclient" % "3.10",
   "com.beachape" % "enumeratum_2.13" % "1.5.14",
   "com.beachape" % "enumeratum-doobie_2.13" % "1.5.16",
-  "com.beachape" % "enumeratum-circe_2.13" % "1.5.21"
+  "com.beachape" % "enumeratum-circe_2.13" % "1.5.21",
+  "com.lightbend.akka" %% "akka-stream-alpakka-sqs" % "1.1.2"
 )
 
 lazy val codegen =
