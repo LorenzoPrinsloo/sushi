@@ -11,14 +11,14 @@ import doobie.util.log.LogHandler
 import enumeratum.EnumEntry
 import io.roflsoft.http.server.SimpleWebServer
 import io.roflsoft.reflection.utils.{className, members}
-
+import logging.logger
 import scala.reflect.runtime.universe.TypeTag
 import scala.language.higherKinds
 
-abstract class DAO[M <: Product : TypeTag : Read](tableName: String, logHandler: LogHandler = logging.logHandler) {
+abstract class DAO[Model <: Product : TypeTag : Read, Patch <: Product : TypeTag : Read](tableName: String, logHandler: LogHandler = logging.logHandler) {
 
-  type DAOTransactor[F[M]] = Transactor[F] { type A = Unit }
-  type ErrorBracket[F[M]] = Bracket[F, Throwable]
+  type DAOTransactor[F[Model]] = Transactor[F] { type A = Unit }
+  type ErrorBracket[F[Model]] = Bracket[F, Throwable]
 
   private def escapeLiteral(a: Any): String = {
     a match {
@@ -28,25 +28,25 @@ abstract class DAO[M <: Product : TypeTag : Read](tableName: String, logHandler:
     }
   }
 
-  def insert[F[M] : DAOTransactor : ErrorBracket](m: M): F[M] = {
+  def insert[F[Model] : DAOTransactor : ErrorBracket](m: Model): F[Model] = {
     val fieldValues = m.productIterator.map(escapeLiteral).mkString(",")
 
-    val insert = fr"""INSERT INTO""" ++ Fragment.const(s""""$tableName"""") ++ fr"""(""" ++ Fragment.const(members[M].mkString(",")) ++ fr""") VALUES (""" ++ Fragment.const(fieldValues) ++ fr""")"""
-    complete(insert.updateWithLogHandler(logHandler).withUniqueGeneratedKeys[M](members[M]: _*))
+    val insert = fr"""INSERT INTO""" ++ Fragment.const(s""""$tableName"""") ++ fr"""(""" ++ Fragment.const(members[Model].mkString(",")) ++ fr""") VALUES (""" ++ Fragment.const(fieldValues) ++ fr""")"""
+    complete(insert.updateWithLogHandler(logHandler).withUniqueGeneratedKeys[Model](members[Model]: _*))
   }
 
 
-  def selectAll[F[M] : DAOTransactor : ErrorBracket]: F[List[M]] = {
-    val select = fr"""SELECT""" ++ Fragment.const(members[M].mkString(",")) ++ fr"""FROM""" ++ Fragment.const(s""""$tableName"""")
-    complete(select.queryWithLogHandler[M](logHandler).to[List])
+  def selectAll[F[Model] : DAOTransactor : ErrorBracket]: F[List[Model]] = {
+    val select = fr"""SELECT""" ++ Fragment.const(members[Model].mkString(",")) ++ fr"""FROM""" ++ Fragment.const(s""""$tableName"""")
+    complete(select.queryWithLogHandler[Model](logHandler).to[List])
   }
 
-  private def selectByIdQuery(id: Long): ConnectionIO[M] = {
-    (fr"""SELECT""" ++ Fragment.const(members[M].mkString(",")) ++ fr"""FROM""" ++ Fragment.const(s""""$tableName"""") ++ fr"""WHERE id = $id""")
-      .queryWithLogHandler[M](logHandler).unique
+  private def selectByIdQuery(id: Long): ConnectionIO[Model] = {
+    (fr"""SELECT""" ++ Fragment.const(members[Model].mkString(",")) ++ fr"""FROM""" ++ Fragment.const(s""""$tableName"""") ++ fr"""WHERE id = $id""")
+      .queryWithLogHandler[Model](logHandler).unique
   }
 
-  def selectById[F[M] : DAOTransactor : ErrorBracket](id: Long): F[M] = complete(selectByIdQuery(id))
+  def selectById[F[Model] : DAOTransactor : ErrorBracket](id: Long): F[Model] = complete(selectByIdQuery(id))
 
   private def deleteByIdQuery(id: Long): ConnectionIO[Int] = {
     (fr"""DELETE FROM""" ++ Fragment.const(s""""$tableName"""") ++ fr"""WHERE id = $id""")
@@ -55,15 +55,17 @@ abstract class DAO[M <: Product : TypeTag : Read](tableName: String, logHandler:
 
   def deleteById[F[_] : DAOTransactor : ErrorBracket](id: Long): F[Int] = complete(deleteByIdQuery(id))
 
-  private def updateByIdQuery(id: Long)(updates: (String, Any)*): ConnectionIO[M] = {
-    val updateFragment = Fragment.const(updates.map { case (key, value) =>
-      s"""$key = ${escapeLiteral(value)}"""
+  private def updateByIdQuery(id: Long)(update: Patch): ConnectionIO[Model] = {
+    val updates = members[Patch].zip(update.productIterator)
+    val updateFragment = Fragment.const(updates.foldLeft(Vector.empty[String]) {
+      case (acc, (key, Some(value))) => acc :+ (s"""$key = ${escapeLiteral(value)}""")
+      case (acc, (_, None)) => acc
     }.mkString(","))
 
     val query = (fr"""UPDATE""" ++ Fragment.const(s""""$tableName"""") ++ fr"""SET""" ++ updateFragment ++ fr"""WHERE id = $id""")
-    query.updateWithLogHandler(logHandler).withUniqueGeneratedKeys[M](members[M]: _*)
+    query.updateWithLogHandler(logHandler).withUniqueGeneratedKeys[Model](members[Model]: _*)
   }
 
-  def updateById[F[M]: DAOTransactor : ErrorBracket](id: Long)(updates: (String, Any)*): F[M] = complete(updateByIdQuery(id)(updates: _*))
+  def updateById[F[Model]: DAOTransactor : ErrorBracket](id: Long)(update: Patch): F[Model] = complete(updateByIdQuery(id)(update))
 
 }

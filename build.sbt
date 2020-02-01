@@ -1,7 +1,7 @@
 name := "sushi"
 organization := "io.roflsoft"
 version := "0.0.2"
-scalaVersion := "2.13.0"
+scalaVersion := "2.13.1"
 
 lazy val akkaHttpVersion = "10.1.11"
 lazy val akkaVersion     = "2.5.26"
@@ -40,3 +40,26 @@ lazy val codegen =
     ),
     libraryDependencies += "de.zalando" %% "beard" % "0.2.0"
   )
+
+
+// Artifact Deployment
+
+// POM settings for Sonatype
+organization := "io.roflsoft"
+homepage := Some(url("https://github.com/LorenzoPrinsloo/sushi"))
+scmInfo := Some(ScmInfo(url("https://github.com/LorenzoPrinsloo/sushi"), "git@github.com:LorenzoPrinsloo/sushi.git"))
+developers := List(Developer("LorenzoPrinsloo",
+  "Lorenzo Prinsloo",
+  "cmlprinsloo@gmail.com",
+  url("https://github.com/LorenzoPrinsloo")))
+licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
+publishMavenStyle := true
+pgpReadOnly := false
+
+// Add sonatype repository settings
+publishTo := Some(
+  if (isSnapshot.value)
+    Opts.resolver.sonatypeSnapshots
+  else
+    Opts.resolver.sonatypeStaging
+)
