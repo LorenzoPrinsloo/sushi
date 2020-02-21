@@ -1,16 +1,17 @@
 package io.roflsoft.http.authentication
 
+import scala.language.postfixOps
 import org.joda.time.LocalDateTime
-
+import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-case class Session(oAuthCredentials: AuthCredentials, token: AuthToken, createdAt: LocalDateTime = LocalDateTime.now())
+case class Session(oAuthCredentials: AuthCredentials, token: AuthToken, createdAt: LocalDateTime = LocalDateTime.now(), invalidatedAt: Option[LocalDateTime] = None)
 object Session {
   def apply(values: Map[String, String]): Option[Session] = try {
     Some(
       new Session(
         AuthCredentials(values("username"), values("password")),
-        AuthToken(values("access_token"), values("token_type"), values("expires_in").toInt),
+        AuthToken(values("access_token"), values("token_type"), values("expires_in").toInt milliseconds),
         LocalDateTime.parse(values("createdAt"))
       )
     )

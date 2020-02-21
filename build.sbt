@@ -8,6 +8,7 @@ lazy val akkaVersion     = "2.5.26"
 lazy val circeVersion    = "0.12.0"
 
 libraryDependencies ++= Seq(
+  "co.fs2" %% "fs2-reactive-streams" % "2.2.1",
   "org.typelevel" %% "cats-core" % "2.0.0",
   "org.tpolecat" %% "doobie-core" % "0.8.7",
   "io.circe" %% "circe-core" % circeVersion,
@@ -28,36 +29,23 @@ libraryDependencies ++= Seq(
   "com.lightbend.akka" %% "akka-stream-alpakka-sqs" % "1.1.2"
 )
 
-lazy val codegen =
-  (project in file("codegen"))
-  .settings(
-    name := "sushi-codegen",
-    organization := "io.roflsoft",
-    version := "0.1-SNAPSHOT",
-    sbtPlugin := true,
-    resolvers ++= Seq(
-      "zalando-maven" at "https://dl.bintray.com/zalando/maven"
-    ),
-    libraryDependencies += "de.zalando" %% "beard" % "0.2.0"
-  )
-
 
 // Artifact Deployment
 
 // POM settings for Sonatype
-organization := "io.roflsoft"
-homepage := Some(url("https://github.com/LorenzoPrinsloo/sushi"))
-scmInfo := Some(ScmInfo(url("https://github.com/LorenzoPrinsloo/sushi"), "git@github.com:LorenzoPrinsloo/sushi.git"))
-developers := List(Developer("LorenzoPrinsloo",
+organization in ThisBuild := "io.roflsoft"
+homepage in ThisBuild := Some(url("https://github.com/LorenzoPrinsloo/sushi"))
+scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/LorenzoPrinsloo/sushi"), "git@github.com:LorenzoPrinsloo/sushi.git"))
+developers in ThisBuild := List(Developer("LorenzoPrinsloo",
   "Lorenzo Prinsloo",
   "cmlprinsloo@gmail.com",
   url("https://github.com/LorenzoPrinsloo")))
-licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
-publishMavenStyle := true
-pgpReadOnly := false
+licenses in ThisBuild += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))
+publishMavenStyle in ThisBuild := true
+pgpReadOnly in ThisBuild := false
 
 // Add sonatype repository settings
-publishTo := Some(
+publishTo in ThisBuild := Some(
   if (isSnapshot.value)
     Opts.resolver.sonatypeSnapshots
   else

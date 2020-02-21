@@ -1,8 +1,5 @@
 package io.roflsoft.reflection
 
-import io.roflsoft.http.authentication.AuthToken
-
-import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 object utils {
@@ -14,6 +11,6 @@ object utils {
   }
 
   def className[A: TypeTag]: String = {
-    typeOf[A].getClass.getSimpleName
+    typeOf[A].toString
   }
 }
