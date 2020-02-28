@@ -8,6 +8,14 @@ import doobie.util.log
 import doobie.util.log.LogHandler
 import monix.eval.Task
 import doobie._
+import cats.effect._
+import fs2._
+import doobie._
+import doobie.quill.DoobieContext
+import fs2.interop.reactivestreams._
+import io.getquill.Literal
+import io.roflsoft.db.transactorStore.StreamConverter
+import monix.reactive.Observable
 
 package object db {
 
@@ -20,28 +28,31 @@ package object db {
 
     def rollBackTransactor[F[_]](implicit transactor: Transactor[F]) = Transactor.oops.set(transactor, HC.rollback)
 
-    // Stream interop
-    import cats.effect._, fs2._
-    import fs2.interop.reactivestreams._
-    import monix.reactive.Observable
-
-    abstract class StreamConverter[F[_] : ConcurrentEffect, A] {
-      def toList(stream: Stream[F, A]): F[List[A]]
+    abstract class StreamConverter[F[_] : ConcurrentEffect, L[_], A] {
+      def as(stream: Stream[F, A]): F[L[A]]
     }
 
-    implicit def taskStreamConverter[A](implicit concurrentEffect: ConcurrentEffect[Task]): StreamConverter[Task, A] = new StreamConverter[Task, A] {
-      override def toList(stream: Stream[Task, A]): Task[List[A]] =
+    implicit def taskStreamListConverter[A](implicit concurrentEffect: ConcurrentEffect[Task]): StreamConverter[Task, List, A] = new StreamConverter[Task, List, A] {
+      override def as(stream: Stream[Task, A]): Task[List[A]] =
         Observable.fromReactivePublisher(stream.toUnicastPublisher()).toListL
     }
 
-    implicit def ioStreamConverter[A](implicit concurrentEffect: ConcurrentEffect[IO]): StreamConverter[IO, A] = new StreamConverter[IO, A] {
-      override def toList(stream: Stream[IO, A]): IO[List[A]] = stream.compile.toList
+    implicit def ioStreamListConverter[A](implicit concurrentEffect: ConcurrentEffect[IO]): StreamConverter[IO, List, A] = new StreamConverter[IO, List, A] {
+      override def as(stream: Stream[IO, A]): IO[List[A]] = stream.compile.toList
     }
   }
 
+  val doobieCtx = new DoobieContext.Postgres(Literal) // Literal naming scheme
 
   def complete[A, F[M]](io: ConnectionIO[A])(implicit transactor: Transactor[F] { type A = Unit }, bracket: Bracket[F, Throwable] ): F[A] = {
     io.transact(transactor)
+  }
+
+  def completeStream[A, F[_], L[_]](stream: Stream[ConnectionIO, A])
+     (implicit transactor: Transactor[F] { type A = Unit },
+      bracket: Bracket[F, Throwable],
+      streamConverter: StreamConverter[F, L, A]): F[L[A]] = {
+    streamConverter.as(stream.transact(transactor))
   }
 
 

@@ -1,14 +1,17 @@
 package io.roflsoft.db
 
-trait Repository[A, F[_]] extends RORepository[A, F] {
+import fs2._
+import doobie._
 
-  def add(item: A): F[A]
+trait Repository[A] extends RORepository[A] {
 
-  def add(items: A*): F[List[A]]
+  def add(item: A): ConnectionIO[A]
 
-  def update(item: A): F[A]
+  def add(items: A*): Stream[ConnectionIO, A]
 
-  def remove(item: A): F[Int]
+  def update(item: A): ConnectionIO[A]
 
-  def removeByQuery(q: Query): F[Int]
+  def remove(item: A): ConnectionIO[Int]
+
+  def removeByQuery(q: Query): ConnectionIO[Int]
 }

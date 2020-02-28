@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
   "co.fs2" %% "fs2-reactive-streams" % "2.2.1",
   "org.typelevel" %% "cats-core" % "2.0.0",
   "org.tpolecat" %% "doobie-core" % "0.8.7",
+  "org.tpolecat" %% "doobie-quill" % "0.8.8",
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
@@ -25,6 +26,7 @@ libraryDependencies ++= Seq(
   "net.debasishg" %% "redisclient" % "3.10",
   "com.beachape" % "enumeratum_2.13" % "1.5.14",
   "com.beachape" % "enumeratum-doobie_2.13" % "1.5.16",
+  "com.beachape" %% "enumeratum-quill" % "1.5.15",
   "com.beachape" % "enumeratum-circe_2.13" % "1.5.21",
   "com.lightbend.akka" %% "akka-stream-alpakka-sqs" % "1.1.2"
 )
