@@ -1,5 +1,7 @@
 package io.roflsoft
 
+import cats.Monad
+import cats.arrow.FunctionK
 import cats.effect.{Bracket, ConcurrentEffect, ContextShift, IO, Sync}
 import com.typesafe.scalalogging.Logger
 import doobie.{ConnectionIO, ExecutionContexts, Transactor}
@@ -16,8 +18,14 @@ import fs2.interop.reactivestreams._
 import io.getquill.Literal
 import io.roflsoft.db.transactorStore.StreamConverter
 import monix.reactive.Observable
+import scala.language.higherKinds
 
 package object db {
+  type MonadTransactor[F[_]] = Transactor[F] { type A = Unit  }
+  type IOStream[A] = Stream[ConnectionIO, A]
+  type ErrorBracket[F[_]] = Bracket[F, Throwable]
+
+  val doobieCtx = new DoobieContext.Postgres(Literal) // Literal naming scheme
 
   object transactorStore {
     implicit val taskContextShift: ContextShift[Task] = Task.contextShift
@@ -42,19 +50,35 @@ package object db {
     }
   }
 
-  val doobieCtx = new DoobieContext.Postgres(Literal) // Literal naming scheme
+  object conversion {
 
-  def complete[A, F[M]](io: ConnectionIO[A])(implicit transactor: Transactor[F] { type A = Unit }, bracket: Bracket[F, Throwable] ): F[A] = {
-    io.transact(transactor)
+    def complete[A, F[_]](io: ConnectionIO[A])(implicit transactor: MonadTransactor[F], bracket: ErrorBracket[F] ): F[A] = io.transact(transactor)
+
+    def completeStream[A, F[_] : Monad, L[_]](stream: Stream[ConnectionIO, A])(implicit transactor: MonadTransactor[F], streamConverter: StreamConverter[F, L, A]): F[L[A]] =
+      streamConverter.as(stream.transact(transactor))
+
+    implicit def naturalTransformation[F[_]](implicit transactor: MonadTransactor[F], bracket: ErrorBracket[F]): FunctionK[ConnectionIO, F] = new FunctionK[ConnectionIO, F] {
+      override def apply[A](fa: ConnectionIO[A]): F[A] = fa.transact(transactor)
+    }
+
+    implicit class ConnectionIOConversion[A](io: ConnectionIO[A]) {
+      def runAs[F[_]](implicit ev: FunctionK[ConnectionIO, F]): F[A] = ev.apply(io)
+
+      def runWith[F[_]](transactor: MonadTransactor[F])(implicit bracket: ErrorBracket[F]): F[A] = {
+        io.transact(transactor)
+      }
+    }
+
+    implicit class ConnectionIOStreamConversion[A](ioStream: IOStream[A]) {
+      def runAs[F[_]: Monad, L[_]](implicit ev: StreamConverter[F, L, A], transactor: MonadTransactor[F]): F[L[A]] = {
+        ev.as(ioStream.transact(transactor))
+      }
+
+      def runWith[F[_]: Monad, L[_]](transactor: MonadTransactor[F])(implicit ev: StreamConverter[F, L, A]): F[L[A]] = {
+        ev.as(ioStream.transact(transactor))
+      }
+    }
   }
-
-  def completeStream[A, F[_], L[_]](stream: Stream[ConnectionIO, A])
-     (implicit transactor: Transactor[F] { type A = Unit },
-      bracket: Bracket[F, Throwable],
-      streamConverter: StreamConverter[F, L, A]): F[L[A]] = {
-    streamConverter.as(stream.transact(transactor))
-  }
-
 
   object logging {
     val logger: Logger = Logger("DAO")
